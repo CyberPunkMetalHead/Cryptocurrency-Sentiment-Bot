@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Inverse_CC_bot-4eacc4d2-49c6-4a9b-a745-c58c22307fa0</UserSecretsId>
+    <RootNamespace>Inverse_CC_bot</RootNamespace>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Betalgo.OpenAI" Version="7.1.5" />
+    <PackageReference Include="DigitalRuby.ExchangeSharp" Version="1.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="Microsoft.ML" Version="1.7.1" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="1.7.1" />
+    <PackageReference Include="Microsoft.ML.LightGbm" Version="1.7.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.4" />
+    <PackageReference Include="Npgsql" Version="7.0.6" />
+    <PackageReference Include="VaderSharp2" Version="3.3.2.1" />
+  </ItemGroup>
+</Project>

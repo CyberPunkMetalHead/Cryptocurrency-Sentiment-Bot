@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Inverse_CC_bot": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
