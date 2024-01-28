@@ -16,6 +16,7 @@
 
 # Visual Studio Code
 .vscode/
+.vs
 
 # Visual Studio
 *.user
