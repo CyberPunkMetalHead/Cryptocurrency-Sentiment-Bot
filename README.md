@@ -37,8 +37,9 @@ Make sure you have the following installed for running and editing:
 
 ### Installation
 
-1. Clone the repository
+1. Clone the repository: `git clone https://github.com/CyberPunkMetalHead/Cryptocurrency-Sentiment-Bot.git`
 2. Run Docker: `docker compose up -d`
+4. configure `appsettings.json`
 3. Be a chad and buy whatever reddit virgins say not to.
 
 ## No code solutions
