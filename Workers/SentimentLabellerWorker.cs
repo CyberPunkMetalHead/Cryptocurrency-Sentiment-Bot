@@ -32,7 +32,7 @@ namespace Inverse_CC_bot.Workers
                     var posts = redditDAL.GetRedditPostsWithoutSentiment();
                     var coins = coinsDAL.GetAllCoins();
 
-                    while(posts == null)
+                    while (posts.Count == 0)
                     {
                         _logger.LogInformation($"No Reddit Posts found, waiting for Posts Table to be populated...");
                         Thread.Sleep(3000);

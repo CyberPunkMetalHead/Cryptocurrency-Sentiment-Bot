@@ -1,6 +1,8 @@
-﻿using Inverse_CC_bot.DataAccess.Models;
+﻿using ExchangeSharp;
+using Inverse_CC_bot.DataAccess.Models;
 using Inverse_CC_bot.Interfaces;
 using Inverse_CC_bot.Services;
+using Inverse_CC_bot.Types;
 
 
 namespace Inverse_CC_bot.Workers
@@ -9,11 +11,14 @@ namespace Inverse_CC_bot.Workers
     {
         private readonly ILogger<ExchangeBuyWorker> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly AppConfig _config;
 
-        public ExchangeBuyWorker(ILogger<ExchangeBuyWorker> logger, IServiceProvider serviceProvider)
+
+        public ExchangeBuyWorker(ILogger<ExchangeBuyWorker> logger, IServiceProvider serviceProvider, AppConfig config)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _config = config;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -41,26 +46,38 @@ namespace Inverse_CC_bot.Workers
                         coinSentiments = coinSentimentsDAL.GetAllCoinSentiments();
                     }
 
-                    coinSentiments.ForEach(async coin =>
+                    // Handles Placing PAPER and LIVE orders
+                    coinSentiments.ForEach(coin =>
                     {
                         if (coin.SentimentValue < 0.1)
                         {
-                            _logger.LogInformation($"Attempting to place order for {coin.Symbol + "-USDT"}");
+                            ExchangeOrderResult? order = null;
+                            var orderType = _config.PaperTrading ? "PAPER" : "LIVE";
 
-                            var order = await exchangeService.PlaceOrder(coin.Symbol + "-USDT", 30);
-                            if (order != null)
+                            _logger.LogInformation($"Trying to place {orderType} order for {coin.Symbol + "USDT"}");
+                            try
                             {
+                                order = _config.PaperTrading ? exchangeService.PlacePaperOrder(coin.Symbol + "USDT", _config.Amount).Result :
+                                exchangeService.PlaceOrder(coin.Symbol + "USDT", _config.Amount).Result;
 
-                                _logger.LogInformation($"Order Placed for {coin.Symbol}");
+                                _logger.LogInformation($"{orderType} Order Placed for {coin.Symbol}: {order}");
 
-                                ordersDAL.InsertOrder(order);
-                                portfolioDAL.InsertPortfolioItem(new PortfolioItem
+                                if (order != null)
                                 {
-                                    OrderId = order.OrderId
-                                });
+                                    ordersDAL.InsertOrder(order);
+                                    portfolioDAL.InsertPortfolioItem(new PortfolioItem
+                                    {
+                                        OrderId = order.OrderId
+                                    });
+                                }
 
                             }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error placing {orderType} order for {coin.Symbol}USDT: {ex}");
+                            }
                         }
+
                     });
                 }
                 catch (Exception ex)

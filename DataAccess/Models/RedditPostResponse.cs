@@ -25,5 +25,6 @@ namespace Inverse_CC_bot.DataAccess.Models
         public int Upvotes { get; set; }
         public int NumComments { get; set; }
         public DateTime CreatedUtc { get; set; }
+        public string? Name { get; set; } = null;
     }
 }

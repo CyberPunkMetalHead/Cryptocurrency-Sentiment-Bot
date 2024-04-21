@@ -1,6 +1,7 @@
 using Inverse_CC_bot.DataAccess.Repositories;
 using Inverse_CC_bot.Interfaces;
 using Inverse_CC_bot.Services;
+using Inverse_CC_bot.Types;
 using Inverse_CC_bot.Workers;
 
 IHost host = Host.CreateDefaultBuilder(args)
@@ -18,6 +19,11 @@ IHost host = Host.CreateDefaultBuilder(args)
                    string apiKey = hostContext.Configuration.GetSection("ApiConfig:ApiKey").Value;
                    string apiSecret = hostContext.Configuration.GetSection("ApiConfig:ApiSecret").Value;
 
+                   //Store the general Configuration Settings that determine the behaviour of the application
+                   var appConfig = hostContext.Configuration.GetSection("AppConfig").Get<AppConfig>();
+
+                   if (appConfig == null) { return; }
+
 
                    services.AddScoped(_ => new DatabaseService(connectionString));
                    services.AddScoped<IExchangeService>(_ => new ExchangeService(Inverse_CC_bot.Enums.ExchangeNameEnum.Binance, apiKey, apiSecret));
@@ -34,7 +40,15 @@ IHost host = Host.CreateDefaultBuilder(args)
                    services.AddHostedService<RedditPostsWorker>();
                    services.AddHostedService<SentimentLabellerWorker>();
                    services.AddHostedService<SentimentAggregatorWorker>();
-                   services.AddHostedService<ExchangeBuyWorker>();
+                   //services.AddHostedService<ExchangeBuyWorker>();
+
+                   services.AddHostedService(provider =>
+                   {
+                       var logger = provider.GetRequiredService<ILogger<ExchangeBuyWorker>>();
+                       var serviceProvider = provider.GetRequiredService<IServiceProvider>();
+                       return new ExchangeBuyWorker(logger, serviceProvider, appConfig);
+                   });
+
 
                    // TO DO - Create a Portfolio Manager Worker that calculates PNL and Sells coins.
 

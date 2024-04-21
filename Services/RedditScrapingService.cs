@@ -18,43 +18,62 @@ namespace Inverse_CC_bot.Services
         }
 
         // TODO: Add pagination to get over the 100 hardcap limit
-        public async Task<List<RedditPost>> GetRedditPosts(string subreddit, int count)
+        public async Task<List<RedditPost>> GetRedditPosts(string subreddit, string filter, int count)
         {
             try
             {
-                string url = $"{RedditBaseUrl}/r/{subreddit}/hot.json?limit={count}";
-                HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-                if (!response.IsSuccessStatusCode) { return null; }
-
-                using var responseStream = await response.Content.ReadAsStreamAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                };
-                var redditDataResponse = await JsonSerializer.DeserializeAsync<RedditPageResponse>(responseStream, options);
+                const int batchSize = 100; // Number of posts to fetch per request
                 var posts = new List<RedditPost>();
+                string after = null;
 
-                foreach (var postListing in redditDataResponse.Data.Children)
+                while (count > 0)
                 {
-                    var post = postListing.Data;
-                    posts.Add(new RedditPost
+                    int fetchCount = Math.Min(count, batchSize);
+                    string url = $"{RedditBaseUrl}/r/{subreddit}/{filter}.json?limit={fetchCount}";
+
+                    if (after != null)
                     {
-                        PostId = post.Id,
-                        PostTitle = post.Title,
-                        Description = post.SelfText,
-                        Upvotes = post.Upvotes,
-                        NumComments = post.NumComments,
-                        DateTimePosted = post.CreatedUtc
-                        // You can add more properties as needed
-                    });
+                        url += $"&after={after}";
+                    }
+
+                    HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        break;
+                    }
+
+                    using var responseStream = await response.Content.ReadAsStreamAsync();
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                    };
+                    var redditDataResponse = await JsonSerializer.DeserializeAsync<RedditPageResponse>(responseStream, options);
+
+                    foreach (var postListing in redditDataResponse.Data.Children)
+                    {
+                        var post = postListing.Data;
+                        posts.Add(new RedditPost
+                        {
+                            PostId = post.Id,
+                            PostTitle = post.Title,
+                            Description = post.SelfText,
+                            Upvotes = post.Upvotes,
+                            NumComments = post.NumComments,
+                            DateTimePosted = post.CreatedUtc
+                            // You can add more properties as needed
+                        });
+                    }
+
+                    // Update the 'after' parameter for the next request
+                    after = redditDataResponse.Data.Children.LastOrDefault()?.Data.Name;
+                    count -= batchSize;
                 }
+
                 return posts;
             }
-
             catch (Exception ex)
             {
-                // Handle exceptions
                 Console.WriteLine($"Error: {ex.Message}");
                 return null;
             }

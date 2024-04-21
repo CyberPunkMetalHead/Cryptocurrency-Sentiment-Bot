@@ -1,7 +1,7 @@
-﻿using System.Data;
-using Npgsql;
+﻿using ExchangeSharp;
 using Inverse_CC_bot.Interfaces;
-using ExchangeSharp;
+using Npgsql;
+using System.Data;
 
 namespace Inverse_CC_bot.DataAccess.Repositories
 {
@@ -19,7 +19,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
             _databaseService.OpenConnection();
             _databaseService.BeginTransaction();
 
-            if(order == null)
+            if (order == null)
             {
                 return;
             }
@@ -27,7 +27,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
             try
             {
                 using NpgsqlCommand cmd = new(
-                    "INSERT INTO exchange_orders (order_id, client_order_id, result, result_code, message, amount, amount_filled, " +
+                    "INSERT INTO orders (order_id, client_order_id, result, result_code, message, amount, amount_filled, " +
                     "is_amount_filled_reversed, price, average_price, order_date, http_header_date, completed_date, market_symbol, is_buy, fees, fees_currency, trade_id, trade_date, update_sequence) " +
                     "VALUES (@OrderId, @ClientOrderId, @Result, @ResultCode, @Message, @Amount, @AmountFilled, @IsAmountFilledReversed, @Price, " +
                     "@AveragePrice, @OrderDate, @HTTPHeaderDate, @CompletedDate, @MarketSymbol, @IsBuy, @Fees, @FeesCurrency, @TradeId, " +
@@ -35,7 +35,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
                     _databaseService.connection);
 
                 cmd.Parameters.AddWithValue("OrderId", order.OrderId);
-                cmd.Parameters.AddWithValue("ClientOrderId", order.ClientOrderId);
+                cmd.Parameters.AddWithValue("ClientOrderId", order.ClientOrderId ?? null);
                 cmd.Parameters.AddWithValue("Result", (int)order.Result);
                 cmd.Parameters.AddWithValue("ResultCode", order.ResultCode);
                 cmd.Parameters.AddWithValue("Message", order.Message);
@@ -43,9 +43,9 @@ namespace Inverse_CC_bot.DataAccess.Repositories
                 cmd.Parameters.AddWithValue("AmountFilled", order.AmountFilled ?? 0);
                 cmd.Parameters.AddWithValue("IsAmountFilledReversed", order.IsAmountFilledReversed);
                 cmd.Parameters.AddWithValue("Price", order.Price ?? 0);
-                cmd.Parameters.AddWithValue("AveragePrice", order.AveragePrice?? 0);
+                cmd.Parameters.AddWithValue("AveragePrice", order.AveragePrice ?? 0);
                 cmd.Parameters.AddWithValue("OrderDate", order.OrderDate);
-                cmd.Parameters.AddWithValue("HTTPHeaderDate", order.HTTPHeaderDate?? DateTime.Now);
+                cmd.Parameters.AddWithValue("HTTPHeaderDate", order.HTTPHeaderDate ?? DateTime.Now);
                 cmd.Parameters.AddWithValue("CompletedDate", order.CompletedDate ?? DateTime.Now);
                 cmd.Parameters.AddWithValue("MarketSymbol", order.MarketSymbol);
                 cmd.Parameters.AddWithValue("IsBuy", order.IsBuy);
@@ -79,7 +79,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
             try
             {
                 using NpgsqlCommand cmd = new(
-                    "SELECT * FROM exchange_orders WHERE order_id = @OrderId",
+                    "SELECT * FROM orders WHERE order_id = @OrderId",
                     _databaseService.connection);
 
                 cmd.Parameters.AddWithValue("OrderId", orderId);
@@ -133,7 +133,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
 
             try
             {
-                using NpgsqlCommand cmd = new("SELECT * FROM exchange_orders", _databaseService.connection);
+                using NpgsqlCommand cmd = new("SELECT * FROM orders", _databaseService.connection);
 
                 using NpgsqlDataReader reader = cmd.ExecuteReader();
 

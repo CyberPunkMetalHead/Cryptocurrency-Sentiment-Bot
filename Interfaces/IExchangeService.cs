@@ -6,6 +6,8 @@ namespace Inverse_CC_bot.Services
     {
         Task<ExchangeOrderResult?> PlaceOrder(string symbol, int quantity);
 
+        Task<ExchangeOrderResult> PlacePaperOrder(string symbol, int quantity);
+
         Task<int> CalculateOrderPrecision(string stepSize);
 
         Task<string?> GetLotSize(string symbol);
