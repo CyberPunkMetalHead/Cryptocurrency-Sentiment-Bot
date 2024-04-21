@@ -38,7 +38,7 @@ Make sure you have the following installed for running and editing:
 ### Installation
 
 1. Clone the repository
-2. Run Docker
+2. Run Docker: `docker compose up -d`
 3. Be a chad and buy whatever reddit virgins say not to.
 
 ## No code solutions
