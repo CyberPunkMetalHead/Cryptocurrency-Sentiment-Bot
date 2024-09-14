@@ -43,5 +43,5 @@ Make sure you have the following installed for running and editing:
 3. Be a chad and buy whatever reddit virgins say not to.
 
 ## No code solutions
-If you're looking for an easy no-code solution for a crypto trading bot - check out [**Aesir Crypto Trading Bot**](https://aesircrypto.com). It's easy to use and has a wide range of features including Copy Trading, Volatilty Trading, in addition to being one of the fastest trading bot platforms on the market.
+If you're looking for an easy no-code solution for a crypto trading bot - check out [**Aesir Crypto Trading Bot**](https://aesircrypto.com). It's easy to use and has a wide range of features including Copy Trading, Volatility Trading, in addition to being one of the fastest trading bot platforms on the market.
 <br><br>For more Algotraing talk, [**Join the Aesir Discord**](https://discord.gg/4GGezGQhhg)
