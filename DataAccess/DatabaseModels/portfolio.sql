@@ -6,5 +6,6 @@ DROP TABLE IF EXISTS portfolio;
 CREATE TABLE portfolio (
     id serial PRIMARY KEY,
     order_id TEXT REFERENCES orders(order_id),
+    symbol TEXT,
     pnl DECIMAL(18, 8)
 );

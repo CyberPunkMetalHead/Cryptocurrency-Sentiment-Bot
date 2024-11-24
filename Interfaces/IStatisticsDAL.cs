@@ -1,6 +1,11 @@
-﻿namespace Inverse_CC_bot.Interfaces;
+﻿using Inverse_CC_bot.DataAccess.Models;
 
-public class IStatisticsDAL
+namespace Inverse_CC_bot.Interfaces
 {
-    
+    public interface IStatisticsDAL
+    {
+        StatisticsItem GetStatisticsBySymbol(string symbol);
+        void InsertStatisticsItem(StatisticsItem statistic);
+        void UpdateStatisticsItemBySymbol(string symbol, decimal pnl, DateTime date);
+    }
 }

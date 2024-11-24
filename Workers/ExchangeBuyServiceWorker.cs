@@ -49,35 +49,33 @@ namespace Inverse_CC_bot.Workers
                     // Handles Placing PAPER and LIVE orders
                     coinSentiments.ForEach(coin =>
                     {
-                        if (coin.SentimentValue < 0.1)
+                        if (!(coin.SentimentValue < 0.1)) return;
+                        
+                        ExchangeOrderResult? order = null;
+                        var orderType = _config.PaperTrading ? "PAPER" : "LIVE";
+
+                        _logger.LogInformation($"Trying to place {orderType} order for {coin.Symbol + "USDT"}");
+                        try
                         {
-                            ExchangeOrderResult? order = null;
-                            var orderType = _config.PaperTrading ? "PAPER" : "LIVE";
+                            order = _config.PaperTrading ? exchangeService.PlacePaperOrder(coin.Symbol + "USDT", _config.Amount).Result :
+                            exchangeService.PlaceOrder(coin.Symbol + "USDT", _config.Amount).Result;
 
-                            _logger.LogInformation($"Trying to place {orderType} order for {coin.Symbol + "USDT"}");
-                            try
+                            _logger.LogInformation($"{orderType} Order Placed for {coin.Symbol}: {order}");
+
+                            if (order == null) return;
+                            
+                            ordersDAL.InsertOrder(order);
+                            portfolioDAL.InsertPortfolioItem(new PortfolioItem
                             {
-                                order = _config.PaperTrading ? exchangeService.PlacePaperOrder(coin.Symbol + "USDT", _config.Amount).Result :
-                                exchangeService.PlaceOrder(coin.Symbol + "USDT", _config.Amount).Result;
-
-                                _logger.LogInformation($"{orderType} Order Placed for {coin.Symbol}: {order}");
-
-                                if (order != null)
-                                {
-                                    ordersDAL.InsertOrder(order);
-                                    portfolioDAL.InsertPortfolioItem(new PortfolioItem
-                                    {
-                                        OrderId = order.OrderId
-                                    });
-                                }
-
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError($"Error placing {orderType} order for {coin.Symbol}USDT: {ex}");
-                            }
+                                OrderId = order.OrderId,
+                                Symbol = coin.Symbol
+                            });
+                            
                         }
-
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error placing {orderType} order for {coin.Symbol}USDT: {ex}");
+                        }
                     });
                 }
                 catch (Exception ex)

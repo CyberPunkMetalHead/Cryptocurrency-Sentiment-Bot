@@ -24,6 +24,5 @@ services:
     - ./DataAccess/DatabaseModels/coins.sql:/docker-entrypoint-initdb.d/coins.sql
     - ./DataAccess/DatabaseModels/orders.sql:/docker-entrypoint-initdb.d/orders.sql
     - ./DataAccess/DatabaseModels/portfolio.sql:/docker-entrypoint-initdb.d/portfolio.sql
-
-
+    - ./DataAccess/DatabaseModels/statistics.sql:/docker-entrypoint-initdb.d/statistics.sql
 

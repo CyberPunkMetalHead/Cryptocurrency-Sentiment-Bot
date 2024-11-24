@@ -16,6 +16,14 @@ namespace Inverse_CC_bot.Services
 
         }
 
+        public async Task<decimal> GetPrice(string symbol)
+        {
+            var ticker = await _exchangeAPI.GetTickerAsync(symbol);
+
+            return ticker.Ask;
+        }
+            
+
         public async Task<ExchangeOrderResult?> PlaceOrder(string symbol, int quantity)
         {
 

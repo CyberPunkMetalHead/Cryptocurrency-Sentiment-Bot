@@ -23,13 +23,13 @@ namespace Inverse_CC_bot.DataAccess.Repositories
             try
             {
                 using NpgsqlCommand cmd = new(
-                    "INSERT INTO portfolio (order_id, pnl) " +
-                    "VALUES (@OrderId, @Pnl)",
+                    "INSERT INTO portfolio (order_id, pnl, symbol) " +
+                    "VALUES (@OrderId, @Pnl , @Symbol)",
                     _databaseService.connection);
 
                 cmd.Parameters.AddWithValue("OrderId", portfolioItem.OrderId);
                 cmd.Parameters.AddWithValue("Pnl", portfolioItem.Pnl ?? 0);
-
+                cmd.Parameters.AddWithValue("Symbol", portfolioItem.Symbol);
                 cmd.ExecuteNonQuery();
 
                 _databaseService.CommitTransaction();
@@ -82,7 +82,6 @@ namespace Inverse_CC_bot.DataAccess.Repositories
             try
             {
                 using NpgsqlCommand cmd = new("SELECT * FROM portfolio", _databaseService.connection);
-
                 using NpgsqlDataReader reader = cmd.ExecuteReader();
 
                 portfolioItems = reader.Cast<IDataRecord>()
@@ -90,6 +89,7 @@ namespace Inverse_CC_bot.DataAccess.Repositories
                     {
                         Id = r.GetInt32(r.GetOrdinal("id")),
                         OrderId = r.GetString(r.GetOrdinal("order_id")),
+                        Symbol = r.GetString(r.GetOrdinal("symbol")),
                         Pnl = r.GetDecimal(r.GetOrdinal("pnl"))
                     })
                     .ToList();
@@ -105,5 +105,37 @@ namespace Inverse_CC_bot.DataAccess.Repositories
 
             return portfolioItems;
         }
+        
+        public void UpdatePortfolioPnlById(int id, decimal pnl)
+        {
+            _databaseService.OpenConnection();
+            _databaseService.BeginTransaction();
+
+            try
+            {
+                using NpgsqlCommand cmd = new(
+                    "UPDATE portfolio " +
+                    "SET pnl = @Pnl " +
+                    "WHERE id = @Id",
+                    _databaseService.connection);
+
+                cmd.Parameters.AddWithValue("Id", id);
+                cmd.Parameters.AddWithValue("Pnl", pnl);
+
+                cmd.ExecuteNonQuery();
+
+                _databaseService.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _databaseService.RollbackTransaction();
+                throw;
+            }
+            finally
+            {
+                _databaseService.CloseConnection();
+            }
+        }
+
     }
 }

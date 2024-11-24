@@ -1,3 +1,4 @@
+using Interactive_CC_bot.Workers;
 using Inverse_CC_bot.DataAccess.Repositories;
 using Inverse_CC_bot.Interfaces;
 using Inverse_CC_bot.Services;
@@ -34,11 +35,14 @@ IHost host = Host.CreateDefaultBuilder(args)
        services.AddScoped<ISentimentAggregatorService, SentimentAggregatorService>();
        services.AddScoped<IOrdersDAL, OrdersDAL>();
        services.AddScoped<IPortfolioDAL, PortfolioDAL>();
+       services.AddScoped<IStatisticsDAL, StatisticsDAL>();
+
 
        // Register RedditPostsWorker and other workers
        services.AddHostedService<RedditPostsWorker>();
        services.AddHostedService<SentimentLabellerWorker>();
        services.AddHostedService<SentimentAggregatorWorker>();
+       services.AddHostedService<StatisticsWorker>();
 
        services.AddHostedService(provider =>
        {
