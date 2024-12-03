@@ -52,7 +52,7 @@ namespace Interactive_CC_bot.Workers
                     foreach (var portfolioItem in portfolio)
                     {
                         // Get current price from exchange service
-                        decimal currentPrice = await exchangeService.GetPrice(portfolioItem.OrderId);
+                        decimal currentPrice = await exchangeService.GetPrice(portfolioItem.Symbol);
 
                         // Calculate the PNL for the item (assuming it is price-based)
                         decimal pnl = (portfolioItem.Pnl ?? 0) + ((currentPrice - portfolioItem.Pnl ?? 0) / portfolioItem.Pnl ?? 0) * 100;

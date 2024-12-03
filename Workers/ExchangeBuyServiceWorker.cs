@@ -74,7 +74,7 @@ namespace Inverse_CC_bot.Workers
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError($"Error placing {orderType} order for {coin.Symbol}USDT: {ex}");
+                            _logger.LogError($"Error placing {orderType} order for {coin.Symbol}USDT. The coin probably doesn't exist: {ex}");
                         }
                     });
                 }
