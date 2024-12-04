@@ -1,49 +1,28 @@
-﻿using Inverse_CC_bot.DataAccess.Models;
+﻿using Dapper;
+using Inverse_CC_bot.DataAccess.Models;
+using Inverse_CC_bot.Interfaces;
 using Npgsql;
 using System.Data;
-using Inverse_CC_bot.Interfaces;
 
 namespace Inverse_CC_bot.DataAccess.Repositories
 {
     public class CoinsDAL : ICoinsDAL
     {
-        public DatabaseService _databaseService;
+        private readonly string _connectionString;
 
-        public CoinsDAL(DatabaseService databaseService)
+        public CoinsDAL(string connectionString)
         {
-            _databaseService = databaseService;
+            _connectionString = connectionString;
         }
+
+        private IDbConnection GetConnection() => new NpgsqlConnection(_connectionString);
 
         public List<Coin> GetAllCoins()
         {
-            List<Coin> coins = new();
+            const string query = "SELECT * FROM coins";
 
-            _databaseService.OpenConnection();
-
-            try
-            {
-                using NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM coins", _databaseService.connection);
-
-                using NpgsqlDataReader reader = cmd.ExecuteReader();
-
-                coins = reader.Cast<IDataRecord>()
-                    .Select(r => new Coin
-                    {
-                        Name = r.GetString(r.GetOrdinal("name")),
-                        Symbol = r.GetString(r.GetOrdinal("symbol"))
-                    })
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
-
-            return coins;
+            using var connection = GetConnection();
+            return connection.Query<Coin>(query).ToList();
         }
     }
 }

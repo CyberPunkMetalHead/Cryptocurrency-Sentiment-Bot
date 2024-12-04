@@ -40,7 +40,7 @@ public class RedditPostsWorker : BackgroundService
                 _logger.LogError(ex, "An error occurred while fetching and inserting Reddit posts.");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
     }
 }

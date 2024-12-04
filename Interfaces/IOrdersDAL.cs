@@ -6,6 +6,7 @@ namespace Inverse_CC_bot.Interfaces
     {
         void InsertOrder(ExchangeOrderResult order);
         ExchangeOrderResult? GetOrderByOrderId(string orderId);
+        List<ExchangeOrderResult> GetOrdersBySymbol(string symbol);
         List<ExchangeOrderResult> GetAllOrders();
     }
 }

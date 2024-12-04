@@ -39,71 +39,32 @@ namespace Interactive_CC_bot.Workers
                     var ordersDAL = scope.ServiceProvider.GetRequiredService<IOrdersDAL>();
                     var statisticsDAL = scope.ServiceProvider.GetRequiredService<IStatisticsDAL>();
                     var exchangeService = scope.ServiceProvider.GetRequiredService<IExchangeService>();
-
-                    // Fetch orders and portfolio items
-                    List<ExchangeOrderResult> orders = ordersDAL.GetAllOrders();
+                    
                     List<PortfolioItem> portfolio = portfolioDAL.GetAllPortfolioItems();
-
-                    // Dictionary to hold aggregated PNL by symbol
-                    var symbolPNLMap = new Dictionary<string, decimal>();
-                    var symbolCountMap = new Dictionary<string, int>();
-
-                    // Step 1: Calculate PNL for each portfolio item
+                    
                     foreach (var portfolioItem in portfolio)
                     {
-                        // Get current price from exchange service
-                        decimal currentPrice = await exchangeService.GetPrice(portfolioItem.Symbol);
-
-                        // Calculate the PNL for the item (assuming it is price-based)
-                        decimal pnl = (portfolioItem.Pnl ?? 0) + ((currentPrice - portfolioItem.Pnl ?? 0) / portfolioItem.Pnl ?? 0) * 100;
-
-                        // Aggregate by symbol
-                        if (symbolPNLMap.ContainsKey(portfolioItem.Symbol))
-                        {
-                            symbolPNLMap[portfolioItem.Symbol] += pnl;
-                            symbolCountMap[portfolioItem.Symbol]++;
-                        }
-                        else
-                        {
-                            symbolPNLMap[portfolioItem.Symbol] = pnl;
-                            symbolCountMap[portfolioItem.Symbol] = 1;
-                        }
-                    }
-
-                    // Step 2: Calculate average PNL for each symbol and insert or update statistics
-                    foreach (var symbol in symbolPNLMap.Keys.ToList())
-                    {
-                        decimal averagePnl = symbolPNLMap[symbol] / symbolCountMap[symbol];
-
-                        // Check if the symbol exists in the database and update or insert accordingly
                         try
                         {
-                            // Check if the statistic exists for the symbol
-                            var existingStatistic = statisticsDAL.GetStatisticsBySymbol(symbol);
-
-                            if (existingStatistic != null)
+                            var orders = ordersDAL.GetOrdersBySymbol(portfolioItem.Symbol);
+                            var averageBuy = orders.Average(o => o.Price);
+                            var currentPrice = await exchangeService.GetPrice(portfolioItem.Symbol+"-USDT");
+                            var pnl = (currentPrice - averageBuy) / averageBuy * 100 ?? 0;
+                            var newStatistic = new StatisticsItem
                             {
-                                // If symbol and date exist, update its PNL
-                                statisticsDAL.UpdateStatisticsItemBySymbol(symbol, averagePnl, new DateTime());
-                            }
-                            else
-                            {
-                                // If symbol and date do not exist, insert a new entry
-                                var newStatistic = new StatisticsItem
-                                {
-                                    Symbol = symbol,
-                                    Pnl = averagePnl,
-                                    Date = new DateTime()
-                                };
-                                statisticsDAL.InsertStatisticsItem(newStatistic);
-                            }
-
-                            _logger.LogInformation($"Statistics updated for symbol: {symbol} with PNL: {averagePnl}");
-
+                                Symbol = portfolioItem.Symbol,
+                                Pnl = pnl,
+                                Date = new DateTime()
+                            };
+                            
+                            portfolioDAL.UpdatePortfolioPnlById(portfolioItem.Id, pnl);
+                            statisticsDAL.InsertStatisticsItem(newStatistic);
+                        
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"Error updating/inserting statistics for symbol: {symbol}");
+                            _logger.LogWarning(
+                                $"Could not calculate PNL for: {portfolioItem.Symbol}: {ex.Message}");
                         }
                     }
 
@@ -116,7 +77,7 @@ namespace Interactive_CC_bot.Workers
                 }
 
                 // Delay next execution
-                await Task.Delay(TimeSpan.FromDays(1), stoppingToken); // Run the statistics update every hour
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Run the statistics update every hour
             }
         }
     }

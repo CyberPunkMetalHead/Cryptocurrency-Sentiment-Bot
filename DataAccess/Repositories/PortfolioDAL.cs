@@ -1,141 +1,57 @@
-﻿using Inverse_CC_bot.DataAccess.Models;
+﻿using Dapper;
+using Inverse_CC_bot.DataAccess.Models;
 using Inverse_CC_bot.Interfaces;
 using Npgsql;
 using System.Data;
 
 namespace Inverse_CC_bot.DataAccess.Repositories
 {
-
     public class PortfolioDAL : IPortfolioDAL
     {
-        private readonly DatabaseService _databaseService;
+        private readonly string _connectionString;
 
-        public PortfolioDAL(DatabaseService databaseService)
+        public PortfolioDAL(string connectionString)
         {
-            _databaseService = databaseService;
+            _connectionString = connectionString;
         }
+
+        private IDbConnection GetConnection() => new NpgsqlConnection(_connectionString);
 
         public void InsertPortfolioItem(PortfolioItem portfolioItem)
         {
-            _databaseService.OpenConnection();
-            _databaseService.BeginTransaction();
+            const string query = @"
+                INSERT INTO portfolio (order_id, pnl, symbol) 
+                VALUES (@OrderId, @Pnl, @Symbol)";
 
-            try
-            {
-                using NpgsqlCommand cmd = new(
-                    "INSERT INTO portfolio (order_id, pnl, symbol) " +
-                    "VALUES (@OrderId, @Pnl , @Symbol)",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("OrderId", portfolioItem.OrderId);
-                cmd.Parameters.AddWithValue("Pnl", portfolioItem.Pnl ?? 0);
-                cmd.Parameters.AddWithValue("Symbol", portfolioItem.Symbol);
-                cmd.ExecuteNonQuery();
-
-                _databaseService.CommitTransaction();
-            }
-            catch (Exception ex)
-            {
-                _databaseService.RollbackTransaction();
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
+            using var connection = GetConnection();
+            connection.Execute(query, portfolioItem);
         }
 
         public void RemovePortfolioItemById(int id)
         {
-            _databaseService.OpenConnection();
-            _databaseService.BeginTransaction();
+            const string query = "DELETE FROM portfolio WHERE id = @Id";
 
-            try
-            {
-                using NpgsqlCommand cmd = new(
-                    "DELETE FROM portfolio WHERE id = @Id",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("Id", id);
-
-                cmd.ExecuteNonQuery();
-
-                _databaseService.CommitTransaction();
-            }
-            catch (Exception ex)
-            {
-                _databaseService.RollbackTransaction();
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
+            using var connection = GetConnection();
+            connection.Execute(query, new { Id = id });
         }
 
         public List<PortfolioItem> GetAllPortfolioItems()
         {
-            List<PortfolioItem> portfolioItems = new();
+            const string query = "SELECT * FROM portfolio";
 
-            _databaseService.OpenConnection();
-
-            try
-            {
-                using NpgsqlCommand cmd = new("SELECT * FROM portfolio", _databaseService.connection);
-                using NpgsqlDataReader reader = cmd.ExecuteReader();
-
-                portfolioItems = reader.Cast<IDataRecord>()
-                    .Select(r => new PortfolioItem
-                    {
-                        Id = r.GetInt32(r.GetOrdinal("id")),
-                        OrderId = r.GetString(r.GetOrdinal("order_id")),
-                        Symbol = r.GetString(r.GetOrdinal("symbol")),
-                        Pnl = r.GetDecimal(r.GetOrdinal("pnl"))
-                    })
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
-
-            return portfolioItems;
+            using var connection = GetConnection();
+            return connection.Query<PortfolioItem>(query).ToList();
         }
-        
+
         public void UpdatePortfolioPnlById(int id, decimal pnl)
         {
-            _databaseService.OpenConnection();
-            _databaseService.BeginTransaction();
+            const string query = @"
+                UPDATE portfolio 
+                SET pnl = @Pnl 
+                WHERE id = @Id";
 
-            try
-            {
-                using NpgsqlCommand cmd = new(
-                    "UPDATE portfolio " +
-                    "SET pnl = @Pnl " +
-                    "WHERE id = @Id",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("Id", id);
-                cmd.Parameters.AddWithValue("Pnl", pnl);
-
-                cmd.ExecuteNonQuery();
-
-                _databaseService.CommitTransaction();
-            }
-            catch (Exception ex)
-            {
-                _databaseService.RollbackTransaction();
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
+            using var connection = GetConnection();
+            connection.Execute(query, new { Id = id, Pnl = pnl });
         }
-
     }
 }

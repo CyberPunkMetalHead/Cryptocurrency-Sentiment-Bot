@@ -1,121 +1,49 @@
 ﻿using Inverse_CC_bot.DataAccess.Models;
 using Inverse_CC_bot.Interfaces;
+using Dapper;
 using Npgsql;
-using System;
+using System.Data;
 
 namespace Inverse_CC_bot.DataAccess.Repositories
 {
     public class StatisticsDAL : IStatisticsDAL
     {
-        private readonly DatabaseService _databaseService;
+        private readonly string _connectionString;
 
-        public StatisticsDAL(DatabaseService databaseService)
+        public StatisticsDAL(string connectionString)
         {
-            _databaseService = databaseService;
+            _connectionString = connectionString;
         }
+
+        private IDbConnection GetConnection() => new NpgsqlConnection(_connectionString);
 
         public void InsertStatisticsItem(StatisticsItem statistic)
         {
-            _databaseService.OpenConnection();
-            _databaseService.BeginTransaction();
+            const string query = "INSERT INTO statistics (symbol, pnl, date) VALUES (@Symbol, @Pnl, @Date)";
 
-            try
-            {
-                using NpgsqlCommand cmd = new(
-                    "INSERT INTO statistics (symbol, pnl, date) " +
-                    "VALUES (@Symbol, @Pnl, @Date)",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("Symbol", statistic.Symbol);
-                cmd.Parameters.AddWithValue("Pnl", statistic.Pnl);
-                cmd.Parameters.AddWithValue("Date", statistic.Date);
-
-                cmd.ExecuteNonQuery();
-
-                _databaseService.CommitTransaction();
-            }
-            catch (Exception)
-            {
-                _databaseService.RollbackTransaction();
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
+            using var connection = GetConnection();
+            connection.Execute(query, statistic); 
         }
 
         public void UpdateStatisticsItemBySymbol(string symbol, decimal pnl, DateTime date)
         {
-            _databaseService.OpenConnection();
-            _databaseService.BeginTransaction();
+            const string query = "UPDATE statistics SET pnl = @Pnl WHERE symbol = @Symbol AND date = @Date";
 
-            try
+            using var connection = GetConnection();
+            var rowsAffected = connection.Execute(query, new { Symbol = symbol, Pnl = pnl, Date = date });
+
+            if (rowsAffected == 0)
             {
-                using NpgsqlCommand cmd = new(
-                    "UPDATE statistics " +
-                    "SET pnl = @Pnl " +
-                    "WHERE symbol = @Symbol and date = @Date",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("Pnl", pnl);
-                cmd.Parameters.AddWithValue("Symbol", symbol);
-                cmd.Parameters.AddWithValue("Date", date);
-
-                int rowsAffected = cmd.ExecuteNonQuery();
-
-                if (rowsAffected == 0)
-                {
-                    // Handle case where no rows were updated (symbol not found)
-                    throw new Exception("No rows were updated. Please check if the symbol exists.");
-                }
-
-                _databaseService.CommitTransaction();
-            }
-            catch (Exception ex)
-            {
-                _databaseService.RollbackTransaction();
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
+                throw new Exception("No rows were updated. Please check if the symbol exists.");
             }
         }
-        
+
         public StatisticsItem GetStatisticsBySymbol(string symbol)
         {
-            _databaseService.OpenConnection();
+            const string query = "SELECT symbol, pnl FROM statistics WHERE symbol = @Symbol LIMIT 1";
 
-            try
-            {
-                using NpgsqlCommand cmd = new(
-                    "SELECT symbol, pnl FROM statistics WHERE symbol = @Symbol LIMIT 1",
-                    _databaseService.connection);
-
-                cmd.Parameters.AddWithValue("Symbol", symbol);
-
-                using NpgsqlDataReader reader = cmd.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    return new StatisticsItem
-                    {
-                        Symbol = reader.GetString(0),
-                        Pnl = reader.GetDecimal(1)
-                    };
-                }
-
-                return null; 
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                _databaseService.CloseConnection();
-            }
+            using var connection = GetConnection();
+            return connection.QueryFirstOrDefault<StatisticsItem>(query, new { Symbol = symbol });
         }
     }
 }

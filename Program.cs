@@ -6,6 +6,9 @@ using Inverse_CC_bot.Types;
 using Inverse_CC_bot.Workers;
 using Microsoft.Extensions.Options;
 
+// Enable Dapper snake_case to PascalCase mapping
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
 IHost host = Host.CreateDefaultBuilder(args)
    .ConfigureAppConfiguration((hostingContext, config) =>
    {
@@ -25,17 +28,21 @@ IHost host = Host.CreateDefaultBuilder(args)
        string apiKey = hostContext.Configuration.GetSection("ApiConfig:ApiKey").Value;
        string apiSecret = hostContext.Configuration.GetSection("ApiConfig:ApiSecret").Value;
 
-       services.AddScoped(_ => new DatabaseService(connectionString));
        services.AddScoped<IExchangeService>(_ => new ExchangeService(Inverse_CC_bot.Enums.ExchangeNameEnum.Binance, apiKey, apiSecret));
 
-       services.AddScoped<IRedditDAL, RedditDAL>();
-       services.AddScoped<ICoinsDAL, CoinsDAL>();
-       services.AddScoped<ICoinSentimentsDAL, CoinSentimentsDAL>();
+        // Register the DALs with the connection string
+       services.AddScoped<IRedditDAL>(sp => new RedditDAL(connectionString));
+       services.AddScoped<ICoinsDAL>(sp => new CoinsDAL(connectionString));
+       services.AddScoped<ICoinSentimentsDAL>(sp => new CoinSentimentsDAL(connectionString));
        services.AddScoped<ISentimentAnalysisService, SentimentAnalysisService>();
        services.AddScoped<ISentimentAggregatorService, SentimentAggregatorService>();
-       services.AddScoped<IOrdersDAL, OrdersDAL>();
-       services.AddScoped<IPortfolioDAL, PortfolioDAL>();
-       services.AddScoped<IStatisticsDAL, StatisticsDAL>();
+       services.AddScoped<IOrdersDAL>(sp => new OrdersDAL(connectionString));
+       services.AddScoped<IPortfolioDAL>(sp => new PortfolioDAL(connectionString));
+       services.AddScoped<IStatisticsDAL>(sp => new StatisticsDAL(connectionString));
+
+        // Register other services as needed
+       services.AddScoped<ISentimentAnalysisService, SentimentAnalysisService>();
+       services.AddScoped<ISentimentAggregatorService, SentimentAggregatorService>();
 
 
        // Register RedditPostsWorker and other workers

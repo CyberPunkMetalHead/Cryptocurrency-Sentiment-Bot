@@ -1,4 +1,5 @@
-﻿using Inverse_CC_bot.DataAccess.Models;
+﻿using System.Text.Json;
+using Inverse_CC_bot.DataAccess.Models;
 using Inverse_CC_bot.Interfaces;
 
 namespace Inverse_CC_bot.Workers
@@ -32,18 +33,14 @@ namespace Inverse_CC_bot.Workers
 
                     var posts = redditDAL.GetRedditPostsWithSentiment();
 
-
                     while (posts.Count == 0)
                     {
                         _logger.LogInformation($"Sentiment Aggregator could not find any Reddit posts with a Sentiment. Trying again in 3s...");
                         Thread.Sleep(3000);
                         posts = redditDAL.GetRedditPostsWithSentiment();
                     }
-
                     var filteredPosts = posts.Where(post => !string.IsNullOrEmpty(post.TopicDiscussed)).ToList();
-
                     var aggregatedSentiments = sentimentAggregatorService.AggregateSentiments(filteredPosts);
-
                     foreach (var coin in aggregatedSentiments.Keys)
                     {
                         double averageSentiment = sentimentAggregatorService.CalculateAverageSentiment(aggregatedSentiments[coin]);

@@ -12,5 +12,6 @@ namespace Inverse_CC_bot.Interfaces
         void InsertPortfolioItem(PortfolioItem portfolioItem);
         void RemovePortfolioItemById(int id);
         List<PortfolioItem> GetAllPortfolioItems();
+        void UpdatePortfolioPnlById(int id, decimal pnl);
     }
 }
